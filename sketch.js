@@ -14,17 +14,17 @@ let sliderArray = [];
 let mSlider, lSlider, oSlider;
 let context;
 
-let waveCoefficients, dwaveCoefficients;
+let waveCoefficients;
 let epsilon = 0.001;
 
 let oscArray = [];
 let envArray = [];
 
-let numPartials = 6;
+let numPartials = 7;
 let amps = new Float32Array(numPartials);
 
 let t = 0;
-let m0 = 0.5;
+let m0 = 0;
 let l0 = 0.7;
 
 let freq;
@@ -63,7 +63,7 @@ function setup() {
 
 function draw() {
   drawString(t); // passing position
-  t += 0.01;
+  t += 0.005;
 }
 
 function initOscs() {
@@ -97,43 +97,47 @@ function initSliders() {
     let slider;
 
     if(!sliderArray[i]) {
-      	if (i%2 == 0) {
-	        slider = createSlider(0, 100, 100/(i+1));
-        } else {
-	        slider = createSlider(0, 100, 0);
-        }
+      let v = 100 * Math.sin((i+1)*PI*0.1)/((i+1)*Math.sin(PI*0.1));
+	    slider = createSlider(0, 100, v);
     } else { slider = sliderArray[i]; }
 
     text('n = ' + str(i+1), 10, map(i,0,numPartials-1,(height+50)/2, height - 50/2));
     slider.position(50, map(i,0,numPartials-1,(height+50)/2, height - 50/2)
-      - slider.height);
+      - slider.height/2);
     slider.changed(updateSliders);
 
     if(!sliderArray[i]) {
 	    sliderArray.push(slider);
     }
+
+    slider.addClass('slider');
+
   }
 
   if (!mSlider) {
 	  mSlider = createSlider(0, 100, 100*m0);
   }
-  mSlider.position(width/4 + 25, 3*height/4 - height/8);
+  mSlider.position(width/4 + 25, 3*height/4 - height/8 + mSlider.height);
 	text('mass', width/4 + 25, 3*height/4 - height/8);
   mSlider.changed(findAllRoots);
+  mSlider.addClass('slider');
 
   if (!lSlider) {
 	  lSlider = createSlider(10, 90, 100*l0);
   }
-  lSlider.position(width/4 + 25, 3*height/4 + height/8);
+  lSlider.position(width/4 + 25, 3*height/4 + height/8 + lSlider.height);
   lSlider.changed(findAllRoots);
+  lSlider.addClass('slider');
+
 	text('position', width/4 + 25, 3*height/4 + height/8);
 
   if (!oSlider) {
-	  oSlider = createSlider(-2, 0, 0);
+	  oSlider = createSlider(-2, 0, -1);
   }
-  oSlider.position(width/4 + 25, 3*height/4);
+  oSlider.position(width/4 + 25, 3*height/4 + oSlider.height);
 	text('octave', width/4 + 25, 3*height/4 );
   oSlider.changed(initKeys);
+  oSlider.addClass('slider');
 
 }
 
@@ -214,7 +218,6 @@ function calculateCoefficients(l) {
   let maxAmps = amps.reduce(max);
 	let normWaves = allRoots.map(z => normalize(l,z));
   let f = 1;
-  let dWaveFilled = false;
 
   for (let x = 0; x <= 1; x += 0.01) {
 		y = 0;
@@ -233,14 +236,9 @@ function calculateCoefficients(l) {
      		waveCoeffs.push((maxAmps/normAmps) * (amps[i] * c * Math.sin(z * (x-1)) / normWaves[i]));
       }
 
-			if(!dWaveFilled) {
-	      dwaveCoefficients.push(z * amps[i] * c / normWaves[i]);
-      }
-
       i++;
     }
 
-    dWaveFilled = true;
     waveCoefficients.push(waveCoeffs);
   }
 
@@ -267,15 +265,15 @@ function drawString(t) {
     let y0 = 0;
 	  let i = 0;
   	for (let z of allRoots) {
-      y0 += c[i] * Math.cos(2*f*z*t);
+      y0 += c[i] * Math.sin(2*f*z*t);
       i++;
     }
-    y0 = map(0.4 * y0, -1, 1, (height-50)/2, 50/2, true);
+    y0 = map(0.2 * y0, -1, 1, (height-50)/2, 50/2, true);
     vertex(x0,y0);
 
     if (Math.abs(m0) > epsilon && Math.abs(x-l0) < epsilon) {
       fill(255);
-      ellipse(x0, y0, 12*m0);
+      ellipse(x0, y0, 24*m0);
       noFill();
     }
     x += 0.01;
@@ -283,15 +281,15 @@ function drawString(t) {
   endShape();
 
   beginShape();
-  for (let t0 = 0; t0 <= 1; t0 += 0.01) {
+  for (let t0 = 0; t0 <= 1; t0 += 0.001) {
     let dt = map(t0, 0, 1, (width+50)/2, width - 25);
     let dy = 0;
     i = 0;
   	for (let z of allRoots) {
-      dy += dwaveCoefficients[i] * Math.cos(2*f*z*(4*(t0 - 1) + t));
+      dy += amps[i] * Math.sin(2*f*z*(4*(t0 - 1) + t));
       i++;
     }
-    dy = map(0.4 * dy, -2*numPartials, 2*numPartials, height - 25, (height+50)/2, true);
+    dy = map(1.5*dy, -2*numPartials, 2*numPartials, height - 25, (height+50)/2, true);
     vertex(dt,dy);
   }
   endShape();
@@ -368,8 +366,8 @@ function tuneOscs(f) {
 
   if (maxAmp > 0) {
 
-    let maxCoeff = dwaveCoefficients.map(e => abs(e)).reduce(max);
-    let vol = dwaveCoefficients.map(e => 0.5 * e * maxAmp / maxCoeff);
+    let maxCoeff = amps.map(e => abs(e)).reduce(max);
+    let vol = amps.map(e => 0.5 * e * maxAmp / maxCoeff);
 
     let i=0;
     for (let osc of oscArray) {
@@ -380,7 +378,7 @@ function tuneOscs(f) {
       if (volume > epsilon) {
 	      osc.freq(f * allRoots[i]/PI);
         osc.phase(phase);
-        let decayTime = max(0.5 - 0.05*i, 0);
+        let decayTime = max(PI/allRoots[i], 0);
         envArray[i].setADSR(0.002, 0, 1, 6.91 * decayTime, 0, 0);
 				// attack time, decay time, sustain level, release time
         // why 6.91? See https://ccrma.stanford.edu/~jos/st/Audio_Decay_Time_T60.html

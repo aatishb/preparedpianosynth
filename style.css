@@ -3,6 +3,38 @@ html, body {
   padding: 0;
 }
 
+/* https://www.w3schools.com/howto/howto_js_rangeslider.asp */
+/* The slider itself */
+
+/* The slider itself */
+.slider {
+  -webkit-appearance: none;  /* Override default CSS styles */
+  appearance: none;
+  height: 5px;
+  border-radius: 5px;
+  background: white;
+  outline: none;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #39375b;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #39375b;
+  cursor: pointer;
+}
 
 #wrapper {
 	display: flex;
