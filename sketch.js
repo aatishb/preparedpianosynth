@@ -117,7 +117,7 @@ function initSliders() {
   if (!mSlider) {
 	  mSlider = createSlider(0, 100, 100*m0);
   }
-  mSlider.position(width/4 + 25, 3*height/4 - height/8 + mSlider.height);
+  mSlider.position(width/4 + 25, 3*height/4 - height/8  + 15);
 	text('mass', width/4 + 25, 3*height/4 - height/8);
   mSlider.changed(findAllRoots);
   mSlider.addClass('slider');
@@ -125,7 +125,7 @@ function initSliders() {
   if (!lSlider) {
 	  lSlider = createSlider(10, 90, 100*l0);
   }
-  lSlider.position(width/4 + 25, 3*height/4 + height/8 + lSlider.height);
+  lSlider.position(width/4 + 25, 3*height/4 + height/8 + 15);
   lSlider.changed(findAllRoots);
   lSlider.addClass('slider');
 
@@ -134,7 +134,7 @@ function initSliders() {
   if (!oSlider) {
 	  oSlider = createSlider(-2, 0, -1);
   }
-  oSlider.position(width/4 + 25, 3*height/4 + oSlider.height);
+  oSlider.position(width/4 + 25, 3*height/4 + 15);
 	text('octave', width/4 + 25, 3*height/4 );
   oSlider.changed(initKeys);
   oSlider.addClass('slider');
