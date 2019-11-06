@@ -11,7 +11,7 @@ const ascending = (a,b) => a - b;
 let allRoots = [];
 
 let sliderArray = [];
-let mSlider, lSlider, oSlider;
+let mSlider, lSlider, oSlider, gSlider;
 let context;
 
 let waveCoefficients;
@@ -117,27 +117,36 @@ function initSliders() {
   if (!mSlider) {
 	  mSlider = createSlider(0, 100, 100*m0);
   }
-  mSlider.position(width/4 + 25, 3*height/4 - height/8  + 15);
-	text('mass', width/4 + 25, 3*height/4 - height/8);
+  mSlider.position(width/4 + 25, height/2 + height/10  + 15);
+	text('mass', width/4 + 25, height/2 + height/10);
   mSlider.changed(findAllRoots);
   mSlider.addClass('slider');
 
   if (!lSlider) {
 	  lSlider = createSlider(10, 90, 100*l0);
   }
-  lSlider.position(width/4 + 25, 3*height/4 + height/8 + 15);
+  lSlider.position(width/4 + 25, height/2 + 2*height/10 + 15);
   lSlider.changed(findAllRoots);
   lSlider.addClass('slider');
 
-	text('position', width/4 + 25, 3*height/4 + height/8);
+	text('position', width/4 + 25, height/2 + 2*height/10);
 
   if (!oSlider) {
 	  oSlider = createSlider(-2, 0, -1);
   }
-  oSlider.position(width/4 + 25, 3*height/4 + 15);
-	text('octave', width/4 + 25, 3*height/4 );
+  oSlider.position(width/4 + 25, height/2 + 3*height/10 + 15);
+	text('octave', width/4 + 25, height/2 + 3*height/10 );
   oSlider.changed(initKeys);
   oSlider.addClass('slider');
+
+  if (!gSlider) {
+    gSlider = createSlider(0, 1, 0.5, 0.01);
+  }
+  gSlider.position(width/4 + 25, height/2 + 4*height/10 + 15);
+  text('gain', width/4 + 25, height/2 + 4*height/10 );
+  gSlider.changed(initKeys);
+  gSlider.addClass('slider');
+
 
 }
 
@@ -354,36 +363,38 @@ function playNote() {
     oscsStarted = true;
   }
 
-  freq = midiToFreq(this.midi)
-  tuneOscs(freq);
+  if (context.currentTime > 0) {
+    freq = midiToFreq(this.midi)
+    tuneOscs(freq);
+  }
 }
 
 
 function tuneOscs(f) {
 
 
-  let maxAmp = amps.reduce(max);
+  let maxAmp = amps.map(e => abs(e)).reduce(max);
+  let sumAmp = amps.map(e => abs(e)).reduce(sum);
+
 
   if (maxAmp > 0) {
 
-    let maxCoeff = amps.map(e => abs(e)).reduce(max);
-    let vol = amps.map(e => 0.5 * e * maxAmp / maxCoeff);
+    let gain = gSlider.value();
+    let vol = amps.map(e => gain * abs(e) /sumAmp);
 
     let i=0;
     for (let osc of oscArray) {
 
       let volume = abs(vol[i]);
-      let phase = vol[i] > 0 ? 0.5 : 0;
 
       if (volume > epsilon) {
 	      osc.freq(f * allRoots[i]/PI);
-        osc.phase(phase);
         let decayTime = max(PI/allRoots[i], 0);
-        envArray[i].setADSR(0.002, 0, 1, 6.91 * decayTime, 0, 0);
-				// attack time, decay time, sustain level, release time
+        // attack time, decay time, sustain level, release time
         // why 6.91? See https://ccrma.stanford.edu/~jos/st/Audio_Decay_Time_T60.html
-        env.setRange(vol[i], 0); // attack level, release level = 0
-  	    envArray[i].play(osc, 0, 0);
+        envArray[i].setADSR(0.002, 6.91 * decayTime, 0, 0);
+        envArray[i].setRange(volume, 0); // attack level, release level = 0
+  	    envArray[i].play();
       }
 
       i++;
